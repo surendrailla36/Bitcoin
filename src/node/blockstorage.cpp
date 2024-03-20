@@ -1251,6 +1251,7 @@ public:
 
 void ImportBlocks(ChainstateManager& chainman, std::vector<fs::path> vImportFiles)
 {
+    FlushResult<InterruptResult, AbortFailure> result; // TODO Return this result!
     ImportingNow imp{chainman.m_blockman.m_importing};
 
     // -reindex
@@ -1305,7 +1306,7 @@ void ImportBlocks(ChainstateManager& chainman, std::vector<fs::path> vImportFile
     // the relevant pointers before the ABC call.
     for (Chainstate* chainstate : WITH_LOCK(::cs_main, return chainman.GetAll())) {
         BlockValidationState state;
-        if (!chainstate->ActivateBestChain(state, nullptr)) {
+        if (!(chainstate->ActivateBestChain(state, nullptr) >> result)) {
             chainman.GetNotifications().fatalError(strprintf(_("Failed to connect best block (%s)."), state.ToString()));
             return;
         }
