@@ -20,10 +20,6 @@ TxRequestTracker& TxDownloadManager::GetTxRequestRef()
 {
     return m_impl->m_txrequest;
 }
-CRollingBloomFilter& TxDownloadManager::RecentRejectsReconsiderableFilter()
-{
-    return m_impl->RecentRejectsReconsiderableFilter();
-}
 void TxDownloadManager::ActiveTipChange()
 {
     m_impl->ActiveTipChange();
@@ -78,5 +74,9 @@ RejectedTxTodo TxDownloadManager::MempoolRejectedTx(const CTransactionRef& ptx, 
 void TxDownloadManager::MempoolRejectedPackage(const Package& package)
 {
     m_impl->MempoolRejectedPackage(package);
+}
+std::pair<bool, std::optional<PackageToValidate>> TxDownloadManager::ReceivedTx(NodeId nodeid, const CTransactionRef& ptx)
+{
+    return m_impl->ReceivedTx(nodeid, ptx);
 }
 } // namespace node
