@@ -20,10 +20,6 @@ TxRequestTracker& TxDownloadManager::GetTxRequestRef()
 {
     return m_impl->m_txrequest;
 }
-CRollingBloomFilter& TxDownloadManager::RecentRejectsFilter()
-{
-    return m_impl->RecentRejectsFilter();
-}
 CRollingBloomFilter& TxDownloadManager::RecentRejectsReconsiderableFilter()
 {
     return m_impl->RecentRejectsReconsiderableFilter();
@@ -78,5 +74,9 @@ void TxDownloadManager::MempoolAcceptedTx(const CTransactionRef& tx)
 RejectedTxTodo TxDownloadManager::MempoolRejectedTx(const CTransactionRef& ptx, const TxValidationState& state, NodeId nodeid, bool maybe_add_new_orphan)
 {
         return m_impl->MempoolRejectedTx(ptx, state, nodeid, maybe_add_new_orphan);
-    }
+}
+void TxDownloadManager::MempoolRejectedPackage(const Package& package)
+{
+    m_impl->MempoolRejectedPackage(package);
+}
 } // namespace node

@@ -108,7 +108,6 @@ public:
     // temporary and removed later once logic has been moved internally.
     TxOrphanage& GetOrphanageRef();
     TxRequestTracker& GetTxRequestRef();
-    CRollingBloomFilter& RecentRejectsFilter();
     CRollingBloomFilter& RecentRejectsReconsiderableFilter();
 
     // Responses to chain events. TxDownloadManager is not an actual client of ValidationInterface, these are called through PeerManager.
@@ -150,6 +149,9 @@ public:
 
     /** Respond to transaction rejected from mempool */
     RejectedTxTodo MempoolRejectedTx(const CTransactionRef& ptx, const TxValidationState& state, NodeId nodeid, bool maybe_add_new_orphan);
+
+    /** Respond to package rejected from mempool */
+    void MempoolRejectedPackage(const Package& package);
 };
 } // namespace node
 #endif // BITCOIN_NODE_TXDOWNLOADMAN_H

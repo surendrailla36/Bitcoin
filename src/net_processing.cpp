@@ -803,12 +803,6 @@ private:
     /** Stalling timeout for blocks in IBD */
     std::atomic<std::chrono::seconds> m_block_stalling_timeout{BLOCK_STALLING_TIMEOUT_DEFAULT};
 
-    CRollingBloomFilter& RecentRejectsFilter() EXCLUSIVE_LOCKS_REQUIRED(m_tx_download_mutex)
-    {
-        AssertLockHeld(m_tx_download_mutex);
-        return m_txdownloadman.RecentRejectsFilter();
-    }
-
     CRollingBloomFilter& RecentRejectsReconsiderableFilter() EXCLUSIVE_LOCKS_REQUIRED(m_tx_download_mutex)
     {
         AssertLockHeld(m_tx_download_mutex);
@@ -3018,7 +3012,7 @@ void PeerManagerImpl::ProcessPackageResult(const node::PackageToValidate& packag
     const auto& senders = package_to_validate.m_senders;
 
     if (package_result.m_state.IsInvalid()) {
-        RecentRejectsReconsiderableFilter().insert(GetPackageHash(package));
+        m_txdownloadman.MempoolRejectedPackage(package);
     }
     // We currently only expect to process 1-parent-1-child packages. Remove if this changes.
     if (!Assume(package.size() == 2)) return;
