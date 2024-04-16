@@ -28,10 +28,6 @@ CRollingBloomFilter& TxDownloadManager::RecentRejectsReconsiderableFilter()
 {
     return m_impl->RecentRejectsReconsiderableFilter();
 }
-CRollingBloomFilter& TxDownloadManager::RecentConfirmedTransactionsFilter()
-{
-    return m_impl->RecentConfirmedTransactionsFilter();
-}
 void TxDownloadManager::ActiveTipChange()
 {
     m_impl->ActiveTipChange();
@@ -43,5 +39,10 @@ void TxDownloadManager::BlockConnected(const std::shared_ptr<const CBlock>& pblo
 void TxDownloadManager::BlockDisconnected()
 {
     m_impl->BlockDisconnected();
+}
+
+bool TxDownloadManager::AlreadyHaveTx(const GenTxid& gtxid, bool include_reconsiderable)
+{
+    return m_impl->AlreadyHaveTx(gtxid, include_reconsiderable);
 }
 } // namespace node
