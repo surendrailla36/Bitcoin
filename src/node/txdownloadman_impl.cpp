@@ -73,4 +73,24 @@ bool TxDownloadImpl::AlreadyHaveTx(const GenTxid& gtxid, bool include_reconsider
 
     return RecentRejectsFilter().contains(hash) || m_opts.m_mempool.exists(gtxid);
 }
+
+void TxDownloadImpl::ConnectedPeer(NodeId nodeid, const TxDownloadConnectionInfo& info)
+{
+    // If already connected (shouldn't happen in practice), exit early.
+    if (m_peer_info.contains(nodeid)) return;
+
+    m_peer_info.emplace(nodeid, PeerInfo(info));
+    if (info.m_wtxid_relay) m_num_wtxid_peers += 1;
+}
+
+void TxDownloadImpl::DisconnectedPeer(NodeId nodeid)
+{
+    m_orphanage.EraseForPeer(nodeid);
+    m_txrequest.DisconnectedPeer(nodeid);
+
+    if (m_peer_info.contains(nodeid)) {
+        if (m_peer_info.at(nodeid).m_connection_info.m_wtxid_relay) m_num_wtxid_peers -= 1;
+        m_peer_info.erase(nodeid);
+    }
+}
 } // namespace node
