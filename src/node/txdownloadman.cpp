@@ -32,5 +32,16 @@ CRollingBloomFilter& TxDownloadManager::RecentConfirmedTransactionsFilter()
 {
     return m_impl->RecentConfirmedTransactionsFilter();
 }
-
+void TxDownloadManager::ActiveTipChange()
+{
+    m_impl->ActiveTipChange();
+}
+void TxDownloadManager::BlockConnected(const std::shared_ptr<const CBlock>& pblock)
+{
+    m_impl->BlockConnected(pblock);
+}
+void TxDownloadManager::BlockDisconnected()
+{
+    m_impl->BlockDisconnected();
+}
 } // namespace node
