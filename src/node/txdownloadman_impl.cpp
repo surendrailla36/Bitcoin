@@ -366,4 +366,9 @@ node::RejectedTxTodo TxDownloadImpl::MempoolRejectedTx(const CTransactionRef& pt
         .m_package_to_validate = std::move(package_to_validate)
     };
 }
+
+void TxDownloadImpl::MempoolRejectedPackage(const Package& package)
+{
+    RecentRejectsReconsiderableFilter().insert(GetPackageHash(package));
+}
 } // namespace node
