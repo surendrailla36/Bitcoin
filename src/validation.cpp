@@ -6410,6 +6410,20 @@ std::optional<int> ChainstateManager::GetSnapshotBaseHeight() const
     return base ? std::make_optional(base->nHeight) : std::nullopt;
 }
 
+void ChainstateManager::RecalculateBestHeader()
+{
+    AssertLockHeld(cs_main);
+    // If, due to invalidation / reconsideration of blocks, the previous
+    // best header is no longer valid or guaranteed to be the most-work
+    // header in our block-index not known to be invalid, recalculate it.
+    m_best_header = ActiveChain().Tip();
+    for (auto& entry : m_blockman.m_block_index) {
+        if (!(entry.second.nStatus & BLOCK_FAILED_MASK) && m_best_header->nChainWork < entry.second.nChainWork) {
+            m_best_header = &entry.second;
+        }
+    }
+}
+
 bool ChainstateManager::ValidatedSnapshotCleanup()
 {
     AssertLockHeld(::cs_main);
