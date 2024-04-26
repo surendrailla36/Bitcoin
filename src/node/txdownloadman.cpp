@@ -12,14 +12,6 @@ TxDownloadManager::TxDownloadManager(const TxDownloadOptions& options) :
 {}
 TxDownloadManager::~TxDownloadManager() = default;
 
-TxOrphanage& TxDownloadManager::GetOrphanageRef()
-{
-    return m_impl->m_orphanage;
-}
-TxRequestTracker& TxDownloadManager::GetTxRequestRef()
-{
-    return m_impl->m_txrequest;
-}
 void TxDownloadManager::ActiveTipChange()
 {
     m_impl->ActiveTipChange();
@@ -77,5 +69,13 @@ bool TxDownloadManager::HaveMoreWork(NodeId nodeid) const
 CTransactionRef TxDownloadManager::GetTxToReconsider(NodeId nodeid)
 {
     return m_impl->GetTxToReconsider(nodeid);
+}
+void TxDownloadManager::CheckIsEmpty() const
+{
+    return m_impl->CheckIsEmpty();
+}
+void TxDownloadManager::CheckIsEmpty(NodeId nodeid) const
+{
+    return m_impl->CheckIsEmpty(nodeid);
 }
 } // namespace node
