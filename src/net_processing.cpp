@@ -574,7 +574,7 @@ private:
                                    NodeId parent_sender,
                                    NodeId child_sender) :
             m_txns{parent, child},
-            m_senders {parent_sender, child_sender}
+            m_senders{parent_sender, child_sender}
         {}
 
         // Move ctor
@@ -3023,6 +3023,10 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
         nodeid,
         state.ToString());
 
+    // Whether we should call AddToCompactExtraTransactions at the end
+    bool add_extra_compact_tx{first_time_failure};
+    // Hashes to pass to AddKnownTx later
+    std::vector<uint256> unique_parents;
     // Populated if failure is reconsiderable and eligible package is found.
     std::optional<PackageToValidate> package_to_validate;
 
@@ -3033,7 +3037,6 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
 
         // Deduplicate parent txids, so that we don't have to loop over
         // the same parent txid more than once down below.
-        std::vector<uint256> unique_parents;
         unique_parents.reserve(tx.vin.size());
         for (const CTxIn& txin : tx.vin) {
             // We start with all parents, and then remove duplicates below.
@@ -3070,7 +3073,6 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
                 // Eventually we should replace this with an improved
                 // protocol for getting all unconfirmed parents.
                 const auto gtxid{GenTxid::Txid(parent_txid)};
-                if (peer) AddKnownTx(*peer, parent_txid);
                 // Exclude m_lazy_recent_rejects_reconsiderable: the missing parent may have been
                 // previously rejected for being too low feerate. This orphan might CPFP it.
                 if (!m_txdownloadman.AlreadyHaveTx(gtxid, /*include_reconsiderable=*/false)) {
@@ -3078,9 +3080,7 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
                 }
             }
 
-            if (m_orphanage.AddTx(ptx, nodeid)) {
-                AddToCompactExtraTransactions(ptx);
-            }
+            add_extra_compact_tx &= m_orphanage.AddTx(ptx, nodeid);
 
             // Once added to the orphan pool, a tx is considered AlreadyHave, and we shouldn't request it anymore.
             m_txrequest.ForgetTxHash(tx.GetHash());
@@ -3103,8 +3103,9 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
             m_txrequest.ForgetTxHash(tx.GetHash());
             m_txrequest.ForgetTxHash(tx.GetWitnessHash());
         }
-        return std::nullopt;
-    } else if (state.GetResult() != TxValidationResult::TX_WITNESS_STRIPPED) {
+    } else if (state.GetResult() == TxValidationResult::TX_WITNESS_STRIPPED) {
+        add_extra_compact_tx = false;
+    } else {
         // We can add the wtxid of this transaction to our reject filter.
         // Do not add txids of witness transactions or witness-stripped
         // transactions to the filter, as they can have been malleated;
@@ -3149,16 +3150,19 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::ProcessInvali
             RecentRejectsFilter().insert(ptx->GetHash().ToUint256());
             m_txrequest.ForgetTxHash(ptx->GetHash());
         }
-        if (first_time_failure && RecursiveDynamicUsage(*ptx) < 100000) {
-            AddToCompactExtraTransactions(ptx);
-        }
+    }
+    if (add_extra_compact_tx && RecursiveDynamicUsage(*ptx) < 100000) {
+        AddToCompactExtraTransactions(ptx);
+    }
+    for (const uint256& parent_txid : unique_parents) {
+        if (peer) AddKnownTx(*peer, parent_txid);
     }
 
     MaybePunishNodeForTx(nodeid, state);
 
     // If the tx failed in ProcessOrphanTx, it should be removed from the orphanage unless the
     // tx was still missing inputs. If the tx was not in the orphanage, EraseTx does nothing and returns 0.
-    if (Assume(state.GetResult() != TxValidationResult::TX_MISSING_INPUTS) && m_orphanage.EraseTx(ptx->GetWitnessHash()) > 0) {
+    if (state.GetResult() != TxValidationResult::TX_MISSING_INPUTS && m_orphanage.EraseTx(ptx->GetWitnessHash()) > 0) {
         LogDebug(BCLog::TXPACKAGES, "   removed orphan tx %s (wtxid=%s)\n", ptx->GetHash().ToString(), ptx->GetWitnessHash().ToString());
     }
 
