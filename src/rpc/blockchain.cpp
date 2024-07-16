@@ -183,7 +183,7 @@ UniValue blockToJSON(BlockManager& blockman, const CBlock& block, const CBlockIn
         case TxVerbosity::SHOW_DETAILS_AND_PREVOUT:
             CBlockUndo blockUndo;
             const bool is_not_pruned{WITH_LOCK(::cs_main, return !blockman.IsBlockPruned(blockindex))};
-            const bool have_undo{is_not_pruned && blockman.UndoReadFromDisk(blockUndo, blockindex)};
+            const bool have_undo{is_not_pruned && WITH_LOCK(::cs_main, return blockindex.nStatus & BLOCK_HAVE_UNDO) && blockman.UndoReadFromDisk(blockUndo, blockindex)};
 
             for (size_t i = 0; i < block.vtx.size(); ++i) {
                 const CTransactionRef& tx = block.vtx.at(i);
