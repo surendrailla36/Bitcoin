@@ -579,7 +579,7 @@ static RPCHelpMan getblockheader()
     };
 }
 
-static void CheckHeaderForData(BlockManager& blockman, const CBlockIndex& blockindex, bool check_for_undo)
+void CheckHeaderForData(BlockManager& blockman, const CBlockIndex& blockindex, bool check_for_undo)
 {
     AssertLockHeld(cs_main);
     uint32_t flag = check_for_undo ? BLOCK_HAVE_UNDO : BLOCK_HAVE_DATA;
