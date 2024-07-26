@@ -129,6 +129,11 @@ public:
         return *m_lazy_recent_confirmed_transactions;
     }
 
+    /** Tracks orphans we are trying to resolve. All hashes stored are wtxids, i.e., the wtxid of
+     * the orphan. Used to schedule resolution with peers, which means requesting the missing
+     * parents by txid. */
+    TxRequestTracker m_orphan_resolution_tracker;
+
     TxDownloadImpl(const TxDownloadOptions& options) : m_opts{options} {}
 
     struct PeerInfo {
@@ -163,6 +168,12 @@ public:
 
     /** New inv has been received. May be added as a candidate to txrequest. */
     bool AddTxAnnouncement(NodeId peer, const GenTxid& gtxid, std::chrono::microseconds now, bool p2p_inv);
+
+    /** Add another announcer of an orphan who is a potential candidate for resolution.
+     * @param[in] newly_added    This is a new orphan that was just added, so do not
+     *                           call AddAnnouncer.
+     * */
+    void AddOrphanAnnouncer(NodeId nodeid, const Wtxid& orphan_wtxid, std::chrono::microseconds now, bool newly_added);
 
     /** Get getdata requests to send. */
     std::vector<GenTxid> GetRequestsToSend(NodeId nodeid, std::chrono::microseconds current_time);
