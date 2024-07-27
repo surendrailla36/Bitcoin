@@ -3369,6 +3369,8 @@ std::optional<PeerManagerImpl::PackageToValidate> PeerManagerImpl::Find1P1CPacka
     return std::nullopt;
 }
 
+// NOTE: the orphan processing used to be uninterruptible and quadratic, which could allow a peer to stall the node for
+// hours with specially crafted transactions. See https://bitcoincore.org/en/2024/07/03/disclose-orphan-dos.
 bool PeerManagerImpl::ProcessOrphanTx(Peer& peer)
 {
     AssertLockHeld(g_msgproc_mutex);
