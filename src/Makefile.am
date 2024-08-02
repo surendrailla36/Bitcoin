@@ -135,6 +135,7 @@ BITCOIN_CORE_H = \
   cluster_linearize.h \
   coins.h \
   common/args.h \
+  common/bip352.h \
   common/bloom.h \
   common/init.h \
   common/run_command.h \
@@ -169,6 +170,7 @@ BITCOIN_CORE_H = \
   index/blockfilterindex.h \
   index/coinstatsindex.h \
   index/disktxpos.h \
+  index/bip352.h \
   index/txindex.h \
   indirectmap.h \
   init.h \
@@ -405,6 +407,7 @@ libbitcoin_node_a_SOURCES = \
   index/blockfilterindex.cpp \
   index/coinstatsindex.cpp \
   index/txindex.cpp \
+  index/bip352.cpp \
   init.cpp \
   kernel/chain.cpp \
   kernel/checks.cpp \
@@ -681,6 +684,7 @@ libbitcoin_common_a_SOURCES = \
   chainparams.cpp \
   coins.cpp \
   common/args.cpp \
+  common/bip352.cpp \
   common/bloom.cpp \
   common/config.cpp \
   common/init.cpp \
