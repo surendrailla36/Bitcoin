@@ -955,3 +955,76 @@ FUZZ_TARGET(clusterlin_merge)
     auto cmp2 = CompareChunks(chunking_merged, chunking2);
     assert(cmp2 >= 0);
 }
+
+FUZZ_TARGET(clusterlin_all_linearizations)
+{
+    // Test whether AllValidLinearizations does iterate over all valid linearizations of a DepGraph
+    // and whether all those linearizations are valid.
+
+    static constexpr uint64_t MAX_ITERATIONS = 100'000;
+    static constexpr int NUM_PERMUTATIONS = 100;
+
+    // Construct an arbitrary graph from the fuzz input and an RNG seed.
+    SpanReader reader(buffer);
+    DepGraph<TestBitSet> depgraph;
+    uint64_t rng_seed{0};
+    try {
+        reader >> Using<DepGraphFormatter>(depgraph) >> rng_seed;
+    } catch (const std::ios_base::failure&) {}
+
+    // Read an arbitrary linearization for depgraph from the fuzz input.
+    auto lin = ReadLinearization(depgraph, reader);
+
+    // Construct a set of valid linearizations, by starting from lin and moving (deterministically)
+    // random topologically valid subsets to the front.
+    std::set<std::vector<ClusterIndex>> lins;
+    lins.insert(lin);
+    InsecureRandomContext rng(rng_seed);
+    std::vector<ClusterIndex> newlin;
+    for (int i = 0; i < NUM_PERMUTATIONS; ++i) {
+        TestBitSet to_front, to_back;
+        newlin.clear();
+        // Determine which transactions to move to the front, and which to the back.
+        ClusterIndex startpos = lin.empty() ? 0 : rng.randrange(lin.size());
+        for (ClusterIndex offset = 0; offset < lin.size(); ++offset) {
+            ClusterIndex idx = offset + startpos;
+            if (idx >= lin.size()) idx -= lin.size();
+            if (!to_front[idx] && !to_back[idx]) {
+                if (rng.randbool()) {
+                    to_front |= depgraph.Ancestors(idx);
+                } else {
+                    to_back |= depgraph.Descendants(idx);
+                }
+            }
+        }
+        // First append the to-front transactions.
+        for (auto t : lin) {
+            if (to_front[t]) newlin.push_back(t);
+        }
+        // Then append the to-back transactions.
+        for (auto t : lin) {
+            if (to_back[t]) newlin.push_back(t);
+        }
+        lin = std::move(newlin);
+        lins.insert(lin);
+    }
+
+    // Iterate over all valid linearizations of depgraph, removing the ones in lins when encountered.
+    uint64_t iterations{0};
+    for (const auto& linit : AllValidLinearizations(depgraph)) {
+        // Verify that the linearization that comes out is valid.
+        SanityCheck(depgraph, linit);
+        // Remove seen linearization
+        lins.erase(linit);
+        // Stop if lins is empty already.
+        if (lins.empty()) break;
+        // If the number of iterations searched through exceeds MAX_ITERATIONS, give up. The
+        // maximum possible valid linearizations is n! for a depgraph with n transactions, which
+        // can easily be too much.
+        ++iterations;
+        if (iterations > MAX_ITERATIONS) return;
+    }
+
+    // Unless MAX_ITERATIONS was hit, we must end up with an empty lins.
+    assert(lins.empty());
+}
