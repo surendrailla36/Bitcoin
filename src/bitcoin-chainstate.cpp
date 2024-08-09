@@ -140,12 +140,9 @@ int main(int argc, char* argv[])
         }
     }
 
-    for (Chainstate* chainstate : WITH_LOCK(::cs_main, return chainman.GetAll())) {
-        BlockValidationState state;
-        if (!chainstate->ActivateBestChain(state, nullptr)) {
-            std::cerr << "Failed to connect best block (" << state.ToString() << ")" << std::endl;
-            goto epilogue;
-        }
+    if (auto result = chainman.ActivateBestChains(); !result) {
+        std::cerr << util::ErrorString(result).original << std::endl;
+        goto epilogue;
     }
 
     // Main program logic starts here
@@ -157,7 +154,7 @@ int main(int argc, char* argv[])
         LOCK(chainman.GetMutex());
         std::cout
         << "\t" << "Blockfiles Indexed: " << std::boolalpha << chainman.m_blockman.m_blockfiles_indexed.load() << std::noboolalpha << std::endl
-        << "\t" << "Snapshot Active: " << std::boolalpha << chainman.IsSnapshotActive() << std::noboolalpha << std::endl
+        << "\t" << "Snapshot Active: " << std::boolalpha << bool{chainman.CurrentChainstate().m_from_snapshot_blockhash} << std::noboolalpha << std::endl
         << "\t" << "Active Height: " << chainman.ActiveHeight() << std::endl
         << "\t" << "Active IBD: " << std::boolalpha << chainman.IsInitialBlockDownload() << std::noboolalpha << std::endl;
         CBlockIndex* tip = chainman.ActiveTip();
@@ -288,7 +285,7 @@ epilogue:
     validation_signals.FlushBackgroundCallbacks();
     {
         LOCK(cs_main);
-        for (Chainstate* chainstate : chainman.GetAll()) {
+        for (auto& chainstate : chainman.m_chainstates) {
             if (chainstate->CanFlushToDisk()) {
                 chainstate->ForceFlushStateToDisk();
                 chainstate->ResetCoinsViews();
