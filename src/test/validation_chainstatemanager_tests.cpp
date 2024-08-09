@@ -797,17 +797,18 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_args, BasicTestingSetup)
     };
 
     // test -assumevalid
-    BOOST_CHECK(!set_opts({}).assumed_valid_block.has_value());
-    BOOST_CHECK(set_opts({"-assumevalid=0"}).assumed_valid_block.value().IsNull());
-    BOOST_CHECK(set_opts({"-noassumevalid"}).assumed_valid_block.value().IsNull());
-    const std::string cmd{"-assumevalid=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"};
-    BOOST_CHECK_EQUAL(set_opts({cmd.c_str()}).assumed_valid_block.value().ToString(), cmd.substr(13, cmd.size()));
+    BOOST_CHECK(!set_opts({}).assumed_valid_block);
+    BOOST_CHECK_EQUAL(set_opts({"-assumevalid=0"}).assumed_valid_block, uint256::ZERO);
+    BOOST_CHECK_EQUAL(set_opts({"-noassumevalid"}).assumed_valid_block, uint256::ZERO);
+    std::string assume_valid = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    BOOST_CHECK_EQUAL(set_opts({("-assumevalid=" + assume_valid).c_str()}).assumed_valid_block, uint256::FromHex(assume_valid));
 
     // test -minimumchainwork
-    BOOST_CHECK(!set_opts({}).minimum_chain_work.has_value());
-    BOOST_CHECK_EQUAL(set_opts({"-minimumchainwork=0"}).minimum_chain_work.value().GetCompact(), 0U);
-    BOOST_CHECK_EQUAL(set_opts({"-nominimumchainwork"}).minimum_chain_work.value().GetCompact(), 0U);
-    BOOST_CHECK_EQUAL(set_opts({"-minimumchainwork=0x1234"}).minimum_chain_work.value().GetCompact(), 0x02123400U);
+    BOOST_CHECK(!set_opts({}).minimum_chain_work);
+    BOOST_CHECK_EQUAL(set_opts({"-minimumchainwork=0"}).minimum_chain_work, arith_uint256());
+    BOOST_CHECK_EQUAL(set_opts({"-nominimumchainwork"}).minimum_chain_work, arith_uint256());
+    std::string minimum_chainwork = "0000000000000000000000000000000000000000000000000000000000001234";
+    BOOST_CHECK_EQUAL(set_opts({("-minimumchainwork=" + minimum_chainwork).c_str()}).minimum_chain_work, UintToArith256(*uint256::FromHex(minimum_chainwork)));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
