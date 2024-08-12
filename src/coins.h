@@ -153,6 +153,13 @@ public:
     };
 
     CCoinsCacheEntry() noexcept = default;
+
+    // No implicit copying, only moves.
+    CCoinsCacheEntry(CCoinsCacheEntry&&) noexcept = default;
+    CCoinsCacheEntry& operator=(CCoinsCacheEntry&&) noexcept = default;
+    CCoinsCacheEntry(const CCoinsCacheEntry&) noexcept = delete;
+    CCoinsCacheEntry& operator=(const CCoinsCacheEntry&) noexcept = delete;
+
     explicit CCoinsCacheEntry(Coin&& coin_) noexcept : coin(std::move(coin_)) {}
     ~CCoinsCacheEntry()
     {
