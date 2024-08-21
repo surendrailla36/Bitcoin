@@ -11,6 +11,8 @@
 #include <test/util/setup_common.h>
 #include <util/strencodings.h>
 
+using namespace util::hex_literals;
+
 // Very simple block filter index sync benchmark, only using coinbase outputs.
 static void BlockFilterIndexSync(benchmark::Bench& bench)
 {
