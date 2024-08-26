@@ -240,7 +240,7 @@ class ConfArgsTest(BitcoinTestFramework):
                 ],
                 timeout=10,
         ):
-            self.start_node(0, extra_args=['-dnsseed=1', '-fixedseeds=1', f'-mocktime={start}'])
+            self.start_node(0, extra_args=['-dnsseed=1', '-fixedseeds=1', f'-test=mocktime={start}'])
         with self.nodes[0].assert_debug_log(expected_msgs=[
                 "Adding fixed seeds as 60 seconds have passed and addrman is empty",
         ]):
@@ -282,7 +282,7 @@ class ConfArgsTest(BitcoinTestFramework):
                 ],
                 timeout=10,
         ):
-            self.start_node(0, extra_args=['-dnsseed=0', '-fixedseeds=1', '-addnode=fakenodeaddr', f'-mocktime={start}'])
+            self.start_node(0, extra_args=['-dnsseed=0', '-fixedseeds=1', '-addnode=fakenodeaddr', f'-test=mocktime={start}'])
         with self.nodes[0].assert_debug_log(expected_msgs=[
                 "Adding fixed seeds as 60 seconds have passed and addrman is empty",
         ]):
@@ -369,11 +369,12 @@ class ConfArgsTest(BitcoinTestFramework):
         node.args = node_args
 
     def test_acceptstalefeeestimates_arg_support(self):
-        self.log.info("Test -acceptstalefeeestimates option support")
+        self.log.info("Test -test=acceptstalefeeestimates option support")
         conf_file = self.nodes[0].datadir_path / "bitcoin.conf"
         for chain, chain_name in {("main", ""), ("test", "testnet3"), ("signet", "signet"), ("testnet4", "testnet4")}:
-            util.write_config(conf_file, n=0, chain=chain_name, extra_config='acceptstalefeeestimates=1\n')
-            self.nodes[0].assert_start_raises_init_error(expected_msg=f'Error: acceptstalefeeestimates is not supported on {chain} chain.')
+            util.write_config(conf_file, n=0, chain=chain_name, extra_config='test=acceptstalefeeestimates=1\n')
+            # -test=acceptstalefeeestimates is only supported on regtest and will return with the default error
+            self.nodes[0].assert_start_raises_init_error(expected_msg=f'Error: -test=<option> can only be used with regtest')
         util.write_config(conf_file, n=0, chain="regtest")  # Reset to regtest
 
     def test_testnet3_deprecation_msg(self):
@@ -386,6 +387,15 @@ class ConfArgsTest(BitcoinTestFramework):
         # Testnet3 node will log the warning
         self.nodes[0].chain = 'testnet3'
         self.nodes[0].replace_in_config([('regtest=', 'testnet='), ('[regtest]', '[test]')])
+
+        # Get the path to the debug.log file
+        log_dir = self.nodes[0].datadir_path / self.nodes[0].chain
+        log_file = log_dir / 'debug.log'
+
+        # Create the debug.log file if it doesn't exist
+        os.makedirs(log_dir, exist_ok=True)
+        open(log_file, 'w').close()
+
         with self.nodes[0].assert_debug_log([t3_warning_log]):
             self.start_node(0)
         # Some CI environments will have limited space and some others won't
@@ -401,6 +411,15 @@ class ConfArgsTest(BitcoinTestFramework):
         # Testnet4 node will not log the warning
         self.nodes[0].chain = 'testnet4'
         self.nodes[0].replace_in_config([('testnet=', 'testnet4='), ('[test]', '[testnet4]')])
+
+        # Get the path to the debug.log file
+        log_dir = self.nodes[0].datadir_path / self.nodes[0].chain
+        log_file = log_dir / 'debug.log'
+
+        # Create the debug.log file if it doesn't exist
+        os.makedirs(log_dir, exist_ok=True)
+        open(log_file, 'w').close()
+        
         with self.nodes[0].assert_debug_log([], unexpected_msgs=[t3_warning_log]):
             self.start_node(0)
         self.stop_node(0)

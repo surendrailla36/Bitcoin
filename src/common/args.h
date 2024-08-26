@@ -453,6 +453,34 @@ extern const std::vector<std::string> TEST_OPTIONS_DOC;
 bool HasTestOption(const ArgsManager& args, const std::string& test_option);
 
 /**
+ *  Return integer argument or default value for a test-only rpc
+ *  @param args The ArgsManager object
+ *  @param test_option The test option to get (e.g. "limitancestorcount")
+ *  @param default_value The default value to return if the option is not set
+ * @return command-line argument or default value
+ */
+uint64_t GetTestOptionInt(const ArgsManager& args, const std::string& test_option, uint64_t default_value);
+std::optional<uint64_t> GetTestOptionInt(const ArgsManager& args, const std::string& test_option);
+
+/**
+ * Return boolean argument or default value for a test-only rpc
+ * @param args The ArgsManager object
+ * @param test_option The test option to get (e.g. "fastprune")
+ * @param default_value (true or false)
+ * @return command-line argument or default value
+ */
+bool GetTestOptionBool(const ArgsManager& args, const std::string& test_option, bool default_value);
+std::optional<bool> GetTestOptionBool(const ArgsManager& args, const std::string& test_option);
+
+/**
+ * Return string argument or default value for a test-only rpc
+ * @param args The ArgsManager object
+ * @param test_option The test option to get (e.g. "checkblockindex")
+ * @return command-line argument or default value
+ */
+std::optional<std::string> GetTestOptionString(const ArgsManager& args, const std::string& test_option);
+
+/**
  * Format a string to be used as group of options in help messages
  *
  * @param message Group name (e.g. "RPC server options:")
