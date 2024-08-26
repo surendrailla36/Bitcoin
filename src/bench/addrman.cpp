@@ -7,9 +7,13 @@
 #include <netbase.h>
 #include <netgroup.h>
 #include <random.h>
+#include <span.h>
+#include <uint256.h>
 #include <util/check.h>
 #include <util/time.h>
+#include <compat/compat.h>
 
+#include <cstring>
 #include <optional>
 #include <vector>
 
