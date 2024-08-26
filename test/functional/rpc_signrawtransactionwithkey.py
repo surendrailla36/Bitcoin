@@ -4,9 +4,6 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test transaction signing using the signrawtransactionwithkey RPC."""
 
-from test_framework.blocktools import (
-    COINBASE_MATURITY,
-)
 from test_framework.messages import (
     COIN,
 )
@@ -81,8 +78,6 @@ class SignRawTransactionWithKeyTest(BitcoinTestFramework):
         embedded_privkey, embedded_pubkey = generate_keypair(wif=True)
         p2sh_p2wsh_address = self.nodes[0].createmultisig(1, [embedded_pubkey.hex()], "p2sh-segwit")
         # send transaction to P2SH-P2WSH 1-of-1 multisig address
-        self.block_hash = self.generate(self.nodes[0], COINBASE_MATURITY + 1)
-        self.blk_idx = 0
         self.send_to_address(p2sh_p2wsh_address["address"], 49.999)
         self.generate(self.nodes[0], 1)
         # Get the UTXO info from scantxoutset
@@ -124,7 +119,6 @@ class SignRawTransactionWithKeyTest(BitcoinTestFramework):
         script_pub_key = address_to_scriptpubkey(addr).hex()
         # Fund that address
         [txid, vout] = self.send_to_address(addr, 10)
-        self.generate(self.nodes[0], 1)
         # Now create and sign a transaction spending that output on node[0], which doesn't know the scripts or keys
         spending_tx = self.nodes[0].createrawtransaction([{'txid': txid, 'vout': vout}], {getnewdestination()[2]: Decimal("9.999")})
         spending_tx_signed = self.nodes[0].signrawtransactionwithkey(spending_tx, [embedded_privkey], [{'txid': txid, 'vout': vout, 'scriptPubKey': script_pub_key, 'redeemScript': redeem_script, 'witnessScript': witness_script, 'amount': 10}])
